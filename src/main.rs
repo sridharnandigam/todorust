@@ -4,6 +4,7 @@
 use clap::Parser;
 use clap::{Arg, App, ArgGroup};
 use std::env;
+use std::collections::HashMap;
 
 #[derive(Parser, Debug)]
 #[clap(author, version, about, long_about = None)]
@@ -17,12 +18,12 @@ struct Cli{
 
 struct TodoList{
     name: String,
-    items: Vec<String>
+    items: HashMap<String, bool>
 }
 
 impl TodoList{
-    fn new(newName: String, newItems: Vec<String>) -> Self {
-        TodoList {name: newName, items: newItems}
+    fn new(newName: String) -> Self {
+        TodoList {name: newName, items: HashMap::new()}
     }
 }
 
@@ -33,30 +34,36 @@ fn main() {
         .about("Store daily todo list")
         .author("Sridhar Nandigam");
 
-    let name_option = Arg::new("name")
-        .long("name")
+    let new_list = Arg::new("newlist")
+        .long("newlist")
+        .short('n')
         .takes_value(true)
         .help("Who to say hello to");
 
     let add_item = Arg::new("additem")
+        .multiple_values(true)
         .long("additem")
         .takes_value(true)
-        .short('a');
+        .short('a')
+        .help("Add item to list");
+    
+    
 
-    let app = app.arg(name_option)
+    let app = app.arg(new_list)
                 .arg(add_item)
                 .group(ArgGroup::new("options")
-                    .args(&["name", "additem"])
+                    .args(&["newlist", "additem"])
                     .required(true));
 
     let matches = app.get_matches();
-        
-    if(matches.is_present("name")){
-        let name = matches.value_of("name").unwrap();
-        println!("Got name: {name}")
+    
+    if(matches.is_present("newlist")){
+        let list_name = matches.value_of("newlist").unwrap();
+        let new_todo = TodoList::new(list_name.to_string());
+        println!("Got name: {list_name}")
     } else if(matches.is_present("additem")){
-        let item = matches.value_of("additem").unwrap();
-        println!("Received item: {item}");
+        let items: Vec<&str> = matches.values_of("additem").unwrap().collect();
+        println!("Received item: {:?}", items);
     } else{
         println!("Bruh.....");
     }
