@@ -5,6 +5,7 @@ use clap::Parser;
 use clap::{Arg, App, ArgGroup};
 use std::env;
 use std::collections::HashMap;
+use chrono;
 
 #[derive(Parser, Debug)]
 #[clap(author, version, about, long_about = None)]
@@ -18,17 +19,28 @@ struct Cli{
 
 struct TodoList{
     name: String,
-    items: HashMap<String, bool>
+    items: HashMap<String, bool>,
+    date: chrono::DateTime<chrono::Local>
 }
 
 impl TodoList{
     fn new(newName: String) -> Self {
-        TodoList {name: newName, items: HashMap::new()}
+        TodoList {name: newName, items: HashMap::new(), date: chrono::offset::Local::now()}
+    }
+
+    fn additem(&mut self, newItem: String){
+        self.items.insert(newItem, false);
+    }
+
+    fn print(&self){
+        println!("{} - {}", self.name, self.date.format("%Y-%m-%d %H:%M:%S").to_string());
     }
 }
 
 fn main() {
     //let args = Cli::parse();
+    let mut list_vec: Vec<TodoList> = Vec::new();
+
     let app = App::new("todo")
         .version("1.0")
         .about("Store daily todo list")
@@ -59,8 +71,13 @@ fn main() {
     
     if(matches.is_present("newlist")){
         let list_name = matches.value_of("newlist").unwrap();
-        let new_todo = TodoList::new(list_name.to_string());
-        println!("Got name: {list_name}")
+        let mut new_todo = TodoList::new(list_name.to_string());
+
+        list_vec.push(new_todo);
+
+        for x in &list_vec {
+            x.print();
+        }
     } else if(matches.is_present("additem")){
         let items: Vec<&str> = matches.values_of("additem").unwrap().collect();
         println!("Received item: {:?}", items);
