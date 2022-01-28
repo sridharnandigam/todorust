@@ -13,16 +13,6 @@ use chrono::{DateTime, Local, NaiveDateTime, Utc};
 
 const DATE_FORMAT: &str = "%Y-%m-%d %H:%M:%S";
 
-#[derive(Parser, Debug)]
-#[clap(author, version, about, long_about = None)]
-struct Cli{
-    #[clap(short, long)]
-    pattern: String,
-
-    #[clap(short, long, default_value_t = 1)]
-    count: u8,
-}
-
 struct TodoList{
     name: String,
     items: HashMap<String, bool>,
@@ -146,6 +136,20 @@ fn main() {
                                 .long("item")
                                 .short('i')
                                 .takes_value(true)))
+                .subcommand(App::new("completed")
+                            .arg(Arg::new("list")
+                                .long("list")
+                                .short('l')
+                                .takes_value(true))
+                            .arg(Arg::new("item")
+                                .long("item")
+                                .short('i')
+                                .takes_value(true)))
+                .subcommand(App::new("view")
+                            .arg(Arg::new("list")
+                                .long("list")
+                                .short('l')
+                                .takes_value(true)))   
                 .subcommand(App::new("all"));
 
     let matches = app.get_matches();
@@ -169,6 +173,27 @@ fn main() {
                 }
             }
         },
+        Some(("completed", sub_m)) => {
+            let list = sub_m.value_of("list").unwrap();
+            let item = sub_m.value_of("item").unwrap();
+
+            for x in list_vec.iter_mut(){
+                if x.name.eq(list){
+                    *x.items.get_mut(item).unwrap() = true;
+                    break;
+                }
+            }
+        },
+        Some(("view", sub_m)) => {
+            let list = sub_m.value_of("list").unwrap();
+
+            for x in list_vec.iter_mut(){
+                if x.name.eq(list){
+                    x.print();
+                    break;
+                }
+            }
+        }
         Some(("all", sub_m)) => {
             if(list_vec.len() == 0){
                 println!("No lists present")
