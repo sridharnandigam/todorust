@@ -51,6 +51,9 @@ impl TodoList{
 
     fn print(&self){
         println!("{} - {}", self.name, self.date.format(&DATE_FORMAT).to_string());
+        for (key, value) in self.items.iter() {
+            println!("{} {}", key, value);
+        }
     }
 
     fn save(&self) -> String{
@@ -65,7 +68,7 @@ impl TodoList{
             let record = format!("{}\t{}\n", k, v);
             content.push_str(&record)
         }
-        //println!("{}", content);
+
         content
     }
 }
@@ -111,10 +114,6 @@ fn retrieve_from_file() -> Result<Vec<TodoList>, std::io::Error>{
         let name = line_iter.next();
         let date = line_iter.next();
 
-        //println!("New Section");
-        //println!("Section: {:?}", s);
-        //println!("Name: {:?}, Date: {:?}", name, date);
-
         let mut temp_todo = TodoList::load(name.unwrap().to_string(), date.unwrap().to_string());
 
         for line in line_iter{
@@ -130,37 +129,14 @@ fn main() {
     let mut list_vec: Vec<TodoList> = retrieve_from_file().expect("Error while creating vector");
 
     let app = App::new("todo")
-        .version("1.0")
-        .about("Store daily todo list")
-        .author("Sridhar Nandigam");
-
-    let new_list = Arg::new("newlist")
-        .long("newlist")
-        .short('n')
-        .takes_value(true)
-        .help("Who to say hello to");
-
-    let add_item = Arg::new("additem")
-        .multiple_values(true)
-        .long("additem")
-        .takes_value(true)
-        .short('a')
-        .help("Add item to list");
-
-    let view_all = Arg::new("viewall")
-        .long("viewall")
-        .takes_value(false)
-        .short('v')
-        .help("View all lists");
-    
-    
-
-    let app = app.arg(new_list)
-                .arg(add_item)
-                .arg(view_all)
-                .group(ArgGroup::new("options")
-                    .args(&["newlist", "additem", "viewall"])
-                    .required(false))
+                .version("1.0")
+                .about("Store daily todo list")
+                .author("Sridhar Nandigam")
+                .subcommand(App::new("new")
+                            .arg(Arg::new("name")
+                                .long("name")
+                                .short('n')
+                                .takes_value(true)))
                 .subcommand(App::new("add")
                             .arg(Arg::new("list")
                                 .long("list")
@@ -169,33 +145,18 @@ fn main() {
                             .arg(Arg::new("item")
                                 .long("item")
                                 .short('i')
-                                .takes_value(true)));
+                                .takes_value(true)))
+                .subcommand(App::new("all"));
 
     let matches = app.get_matches();
-    
-    if(matches.is_present("newlist")){
-        let list_name = matches.value_of("newlist").unwrap();
-        let mut new_todo = TodoList::new(list_name.to_string());
-
-        list_vec.push(new_todo);
-
-        println!("{}", list_vec.len())
-    } else if(matches.is_present("additem")){
-        let items: Vec<&str> = matches.values_of("additem").unwrap().collect();
-        println!("Received item: {:?}", items);
-    } else if(matches.is_present("viewall")){
-        if(list_vec.len() == 0){
-            println!("No lists present")
-        } else{
-            for x in &list_vec {
-                x.print();
-            }
-        }
-    } else{
-        println!("Bruh, how tf.....");
-    }
 
     match matches.subcommand() {
+        Some(("new", sub_m)) => {
+            let list_name = sub_m.value_of("name").unwrap();
+            let mut new_todo = TodoList::new(list_name.to_string());
+
+            list_vec.push(new_todo);
+        }
         Some(("add", sub_m)) => {
             let list = sub_m.value_of("list").unwrap();
             let item = sub_m.value_of("item").unwrap();
@@ -205,6 +166,15 @@ fn main() {
                 if x.name.eq(list){
                     x.additem(item.to_string());
                     break;
+                }
+            }
+        },
+        Some(("all", sub_m)) => {
+            if(list_vec.len() == 0){
+                println!("No lists present")
+            } else{
+                for x in &list_vec {
+                    x.print();
                 }
             }
         },
