@@ -9,7 +9,7 @@ use std::fs::File;
 use std::io::prelude::*;
 use std::io::Read;
 use std::io::ErrorKind;
-use chrono::{DateTime, Local, NaiveDate, Utc};
+use chrono::{DateTime, Local, NaiveDateTime, Utc};
 
 const DATE_FORMAT: &str = "%Y-%m-%d %H:%M:%S";
 
@@ -35,8 +35,14 @@ impl TodoList{
     }
 
     fn load(new_name: String, new_date: String) -> Self{
-        let naive = NaiveDate::parse_from_str(&new_date, &DATE_FORMAT).unwrap().and_hms(0, 0, 0);
+        let naive = NaiveDateTime::parse_from_str(&new_date, &DATE_FORMAT).unwrap();
         TodoList {name: new_name, items: HashMap::new(), date: DateTime::<Utc>::from_utc(naive, Utc)}
+    }
+
+    fn loaditem(&mut self, line: String){
+        let v = line.splitn(2, "\t").collect::<Vec<&str>>();
+        //println!("Loading item: {:?}", v);
+        &self.items.insert(v[0].to_string(), std::str::FromStr::from_str(v[1]).unwrap());
     }
 
     fn additem(&mut self, newItem: String){
@@ -59,7 +65,7 @@ impl TodoList{
             let record = format!("{}\t{}\n", k, v);
             content.push_str(&record)
         }
-        println!("{}", content);
+        //println!("{}", content);
         content
     }
 }
@@ -71,8 +77,7 @@ fn save_to_file(input: &Vec<TodoList>) -> Result<(), std::io::Error>{
         let record = x.save();
         output.push_str(&record);
         output.push_str("--");
-        output.push_str(newline);
-        newline = "\n"
+        output.push_str("\n");
     }
 
     //std::fs::write("cache.txt", output)
@@ -106,22 +111,16 @@ fn retrieve_from_file() -> Result<Vec<TodoList>, std::io::Error>{
         let name = line_iter.next();
         let date = line_iter.next();
 
-        println!("New Section");
-        println!("Section: {:?}", s);
-        println!("Name: {:?}, Date: {:?}", name, date);
+        //println!("New Section");
+        //println!("Section: {:?}", s);
+        //println!("Name: {:?}, Date: {:?}", name, date);
 
         let mut temp_todo = TodoList::load(name.unwrap().to_string(), date.unwrap().to_string());
 
         for line in line_iter{
-            temp_todo.additem(line.to_string());
+            temp_todo.loaditem(line.to_string());
         }
         return_vec.push(temp_todo);
-    }
-
-    println!("Debug input");
-    
-    for x in &return_vec{
-        x.print();
     }
     Ok(return_vec)
 }
@@ -186,6 +185,6 @@ fn main() {
     } else{
         println!("Bruh, how tf.....");
     }
-
+    
     save_to_file(&list_vec);
 }
