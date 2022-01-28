@@ -160,7 +160,16 @@ fn main() {
                 .arg(view_all)
                 .group(ArgGroup::new("options")
                     .args(&["newlist", "additem", "viewall"])
-                    .required(true));
+                    .required(false))
+                .subcommand(App::new("add")
+                            .arg(Arg::new("list")
+                                .long("list")
+                                .short('l')
+                                .takes_value(true))
+                            .arg(Arg::new("item")
+                                .long("item")
+                                .short('i')
+                                .takes_value(true)));
 
     let matches = app.get_matches();
     
@@ -185,6 +194,23 @@ fn main() {
     } else{
         println!("Bruh, how tf.....");
     }
-    
+
+    match matches.subcommand() {
+        Some(("add", sub_m)) => {
+            let list = sub_m.value_of("list").unwrap();
+            let item = sub_m.value_of("item").unwrap();
+
+            println!("List: {}, Item: {}", list, item);
+            for x in list_vec.iter_mut(){
+                if x.name.eq(list){
+                    x.additem(item.to_string());
+                    break;
+                }
+            }
+        },
+        _ => {
+            println!("Nothing detected");
+        }
+    }
     save_to_file(&list_vec);
 }
