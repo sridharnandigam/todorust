@@ -133,7 +133,8 @@ fn main() {
                             .arg(Arg::new("list")
                                 .long("list")
                                 .short('l')
-                                .takes_value(true))
+                                .takes_value(true)
+                                .help("provide list index"))
                             .arg(Arg::new("item")
                                 .long("item")
                                 .short('i')
@@ -143,7 +144,8 @@ fn main() {
                             .arg(Arg::new("list")
                                 .long("list")
                                 .short('l')
-                                .takes_value(true))
+                                .takes_value(true)
+                                .help("provide list index"))
                             .arg(Arg::new("item")
                                 .long("item")
                                 .short('i')
@@ -153,10 +155,39 @@ fn main() {
                             .arg(Arg::new("list")
                                 .long("list")
                                 .short('l')
-                                .takes_value(true))
+                                .takes_value(true)
+                                .help("provide list index"))
                             .about("View specific list"))   
                 .subcommand(App::new("all")
-                            .about("View all lists"));
+                            .about("View all lists"))
+                .subcommand(App::new("rmitem")
+                            .arg(Arg::new("list")
+                                .long("list")
+                                .short('l')
+                                .takes_value(true)
+                                .help("provide list index"))
+                            .arg(Arg::new("item")
+                                .long("item")
+                                .short('i')
+                                .takes_value(true))
+                            .about("Remove an item"))
+                .subcommand(App::new("undo")
+                            .arg(Arg::new("list")
+                                .long("list")
+                                .short('l')
+                                .takes_value(true)
+                                .help("provide list index"))
+                            .arg(Arg::new("item")
+                                .long("item")
+                                .short('i')
+                                .takes_value(true))
+                            .about("Reset task as incomplete"))
+                .subcommand(App::new("throw")
+                            .arg(Arg::new("list")
+                                .long("list")
+                                .short('l')
+                                .takes_value(true)
+                                .help("provide list index")));
 
     let matches = app.get_matches();
 
@@ -166,6 +197,15 @@ fn main() {
             let mut new_todo = TodoList::new(&list_name.to_string());
 
             list_vec.push(new_todo);
+        },
+        Some(("throw", sub_m)) => {
+            let index: usize = sub_m.value_of_t("list").expect("MISSING ARG LIST");
+
+            if index < list_vec.len(){
+                list_vec.remove(index);
+            } else{
+                println!("Index out of bounds");
+            }
         }
         Some(("add", sub_m)) => {
             let index: usize = sub_m.value_of_t("list").expect("MISSING ARG LIST");
@@ -187,11 +227,24 @@ fn main() {
                 println!("Index out of bounds");
             }
         },
+        Some(("undo", sub_m)) => {
+            let index: usize = sub_m.value_of_t("list").expect("MISSING ARG LIST");
+            let item = sub_m.value_of("item").expect("MISSING ARG ITEM");
+
+            if index < list_vec.len(){
+                *list_vec[index].items.get_mut(item).unwrap() = false;
+            } else{
+                println!("Index out of bounds");
+            }
+        },
         Some(("view", sub_m)) => {
             let index: usize = sub_m.value_of_t("list").expect("MISSING ARG LIST");
 
             if index < list_vec.len(){
+                println!("----------------------------");
+                print!("[{}] ", index);
                 list_vec[index].print();
+                println!("----------------------------");
             } else{
                 println!("Index out of bounds");
             }
@@ -200,12 +253,26 @@ fn main() {
             if(list_vec.len() == 0){
                 println!("No lists present")
             } else{
+                let mut index = 0;
                 for x in &list_vec {
+                    println!("----------------------------");
+                    print!("[{}] ", index);
                     x.print();
                     println!("----------------------------");
+                    index += 1;
                 }
             }
         },
+        Some(("rmitem", sub_m)) => {
+            let index: usize = sub_m.value_of_t("list").expect("MISSING ARG LIST");
+            let item = sub_m.value_of("item").expect("MISSING ARG ITEM");
+
+            if index < list_vec.len(){
+                list_vec[index].items.remove(item).unwrap();
+            } else{
+                println!("Index out of bounds");
+            }
+        }
         _ => {
             println!("Nothing detected");
         }
