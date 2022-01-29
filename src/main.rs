@@ -20,8 +20,8 @@ struct TodoList{
 }
 
 impl TodoList{
-    fn new(new_name: String) -> Self {
-        TodoList {name: new_name, items: HashMap::new(), date: chrono::Utc::now()}
+    fn new(new_name: &String) -> Self {
+        TodoList {name: new_name.to_string(), items: HashMap::new(), date: chrono::Utc::now()}
     }
 
     fn load(new_name: String, new_date: String) -> Self{
@@ -42,7 +42,7 @@ impl TodoList{
     fn print(&self){
         println!("{} - {}", self.name, self.date.format(&DATE_FORMAT).to_string());
         for (key, value) in self.items.iter() {
-            println!("{} {}", key, value);
+            println!("\t{} {}", key, value);
         }
     }
 
@@ -126,7 +126,9 @@ fn main() {
                             .arg(Arg::new("name")
                                 .long("name")
                                 .short('n')
-                                .takes_value(true)))
+                                .takes_value(true)
+                                .help("name of new list"))
+                            .about("Create new list"))
                 .subcommand(App::new("add")
                             .arg(Arg::new("list")
                                 .long("list")
@@ -135,8 +137,9 @@ fn main() {
                             .arg(Arg::new("item")
                                 .long("item")
                                 .short('i')
-                                .takes_value(true)))
-                .subcommand(App::new("completed")
+                                .takes_value(true))
+                            .about("Add item to existing list"))
+                .subcommand(App::new("complete")
                             .arg(Arg::new("list")
                                 .long("list")
                                 .short('l')
@@ -144,54 +147,53 @@ fn main() {
                             .arg(Arg::new("item")
                                 .long("item")
                                 .short('i')
-                                .takes_value(true)))
+                                .takes_value(true))
+                            .about("Mark item as completed on existing list"))
                 .subcommand(App::new("view")
                             .arg(Arg::new("list")
                                 .long("list")
                                 .short('l')
-                                .takes_value(true)))   
-                .subcommand(App::new("all"));
+                                .takes_value(true))
+                            .about("View specific list"))   
+                .subcommand(App::new("all")
+                            .about("View all lists"));
 
     let matches = app.get_matches();
 
     match matches.subcommand() {
         Some(("new", sub_m)) => {
-            let list_name = sub_m.value_of("name").unwrap();
-            let mut new_todo = TodoList::new(list_name.to_string());
+            let list_name = sub_m.value_of("name").expect("MISSING ARG NAME");
+            let mut new_todo = TodoList::new(&list_name.to_string());
 
             list_vec.push(new_todo);
         }
         Some(("add", sub_m)) => {
-            let list = sub_m.value_of("list").unwrap();
-            let item = sub_m.value_of("item").unwrap();
+            let index: usize = sub_m.value_of_t("list").expect("MISSING ARG LIST");
+            let item = sub_m.value_of("item").expect("MISSING ARG ITEM");
 
-            println!("List: {}, Item: {}", list, item);
-            for x in list_vec.iter_mut(){
-                if x.name.eq(list){
-                    x.additem(item.to_string());
-                    break;
-                }
+            if index < list_vec.len(){
+                list_vec[index].additem(item.to_string());
+            } else{
+                println!("Index out of bounds");
             }
         },
-        Some(("completed", sub_m)) => {
-            let list = sub_m.value_of("list").unwrap();
-            let item = sub_m.value_of("item").unwrap();
+        Some(("complete", sub_m)) => {
+            let index: usize = sub_m.value_of_t("list").expect("MISSING ARG LIST");
+            let item = sub_m.value_of("item").expect("MISSING ARG ITEM");
 
-            for x in list_vec.iter_mut(){
-                if x.name.eq(list){
-                    *x.items.get_mut(item).unwrap() = true;
-                    break;
-                }
+            if index < list_vec.len(){
+                *list_vec[index].items.get_mut(item).unwrap() = true;
+            } else{
+                println!("Index out of bounds");
             }
         },
         Some(("view", sub_m)) => {
-            let list = sub_m.value_of("list").unwrap();
+            let index: usize = sub_m.value_of_t("list").expect("MISSING ARG LIST");
 
-            for x in list_vec.iter_mut(){
-                if x.name.eq(list){
-                    x.print();
-                    break;
-                }
+            if index < list_vec.len(){
+                list_vec[index].print();
+            } else{
+                println!("Index out of bounds");
             }
         }
         Some(("all", sub_m)) => {
@@ -200,6 +202,7 @@ fn main() {
             } else{
                 for x in &list_vec {
                     x.print();
+                    println!("----------------------------");
                 }
             }
         },
