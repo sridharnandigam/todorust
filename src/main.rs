@@ -207,6 +207,7 @@ fn main() {
             let index: usize = sub_m.value_of_t("list").expect("MISSING ARG LIST");
 
             assert!(index < list_vec.len(), "List index out of bounds");
+            list_vec.remove(index);
         }
         Some(("add", sub_m)) => {
             let index: usize = sub_m.value_of_t("list").expect("MISSING ARG LIST");
