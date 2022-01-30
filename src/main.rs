@@ -15,34 +15,34 @@ const DATE_FORMAT: &str = "%Y-%m-%d %H:%M:%S";
 
 struct TodoList{
     name: String,
-    items: HashMap<String, bool>,
+    items: Vec<(String, bool)>,
     date: chrono::DateTime<chrono::Utc>
 }
 
 impl TodoList{
     fn new(new_name: &String) -> Self {
-        TodoList {name: new_name.to_string(), items: HashMap::new(), date: chrono::Utc::now()}
+        TodoList {name: new_name.to_string(), items: Vec::new(), date: chrono::Utc::now()}
     }
 
     fn load(new_name: String, new_date: String) -> Self{
         let naive = NaiveDateTime::parse_from_str(&new_date, &DATE_FORMAT).unwrap();
-        TodoList {name: new_name, items: HashMap::new(), date: DateTime::<Utc>::from_utc(naive, Utc)}
+        TodoList {name: new_name, items: Vec::new(), date: DateTime::<Utc>::from_utc(naive, Utc)}
     }
 
     fn loaditem(&mut self, line: String){
         let v = line.splitn(2, "\t").collect::<Vec<&str>>();
         //println!("Loading item: {:?}", v);
-        &self.items.insert(v[0].to_string(), std::str::FromStr::from_str(v[1]).unwrap());
+        &self.items.push((v[0].to_string(), std::str::FromStr::from_str(v[1]).unwrap()));
     }
 
     fn additem(&mut self, newItem: String){
-        self.items.insert(newItem, false);
+        self.items.push((newItem, false));
     }
 
     fn print(&self){
         println!("{} - {}", self.name, self.date.format(&DATE_FORMAT).to_string());
-        for (key, value) in self.items.iter() {
-            println!("\t{} {}", key, value);
+        for (i, (key, value)) in self.items.iter().enumerate() {
+            println!("\t[{}] {} {}", i, key, value);
         }
     }
 
@@ -138,7 +138,8 @@ fn main() {
                             .arg(Arg::new("item")
                                 .long("item")
                                 .short('i')
-                                .takes_value(true))
+                                .takes_value(true)
+                                .help("provide item index"))
                             .about("Add item to existing list"))
                 .subcommand(App::new("complete")
                             .arg(Arg::new("list")
@@ -149,7 +150,8 @@ fn main() {
                             .arg(Arg::new("item")
                                 .long("item")
                                 .short('i')
-                                .takes_value(true))
+                                .takes_value(true)
+                                .help("provide item index"))
                             .about("Mark item as completed on existing list"))
                 .subcommand(App::new("view")
                             .arg(Arg::new("list")
@@ -169,7 +171,8 @@ fn main() {
                             .arg(Arg::new("item")
                                 .long("item")
                                 .short('i')
-                                .takes_value(true))
+                                .takes_value(true)
+                                .help("provide item index"))
                             .about("Remove an item"))
                 .subcommand(App::new("undo")
                             .arg(Arg::new("list")
@@ -180,14 +183,16 @@ fn main() {
                             .arg(Arg::new("item")
                                 .long("item")
                                 .short('i')
-                                .takes_value(true))
+                                .takes_value(true)
+                                .help("provide item index"))
                             .about("Reset task as incomplete"))
                 .subcommand(App::new("throw")
                             .arg(Arg::new("list")
                                 .long("list")
                                 .short('l')
                                 .takes_value(true)
-                                .help("provide list index")));
+                                .help("provide list index"))
+                            .about("Delete todo list"));
 
     let matches = app.get_matches();
 
@@ -201,80 +206,62 @@ fn main() {
         Some(("throw", sub_m)) => {
             let index: usize = sub_m.value_of_t("list").expect("MISSING ARG LIST");
 
-            if index < list_vec.len(){
-                list_vec.remove(index);
-            } else{
-                println!("Index out of bounds");
-            }
+            assert!(index < list_vec.len(), "List index out of bounds");
         }
         Some(("add", sub_m)) => {
             let index: usize = sub_m.value_of_t("list").expect("MISSING ARG LIST");
             let item = sub_m.value_of("item").expect("MISSING ARG ITEM");
 
-            if index < list_vec.len(){
-                list_vec[index].additem(item.to_string());
-            } else{
-                println!("Index out of bounds");
-            }
+            assert!(index < list_vec.len(), "List index out of bounds");
+            list_vec[index].additem(item.to_string());
         },
         Some(("complete", sub_m)) => {
             let index: usize = sub_m.value_of_t("list").expect("MISSING ARG LIST");
-            let item = sub_m.value_of("item").expect("MISSING ARG ITEM");
+            let item: usize = sub_m.value_of_t("item").expect("MISSING ARG ITEM");
 
-            if index < list_vec.len(){
-                *list_vec[index].items.get_mut(item).unwrap() = true;
-            } else{
-                println!("Index out of bounds");
-            }
+            assert!(index < list_vec.len(), "List index out of bounds");
+            assert!(item < list_vec[index].items.len(), "Item index out of bounds");
+            list_vec[index].items[item].1 = true;
         },
         Some(("undo", sub_m)) => {
             let index: usize = sub_m.value_of_t("list").expect("MISSING ARG LIST");
-            let item = sub_m.value_of("item").expect("MISSING ARG ITEM");
+            let item: usize = sub_m.value_of_t("item").expect("MISSING ARG ITEM");
 
-            if index < list_vec.len(){
-                *list_vec[index].items.get_mut(item).unwrap() = false;
-            } else{
-                println!("Index out of bounds");
-            }
+            assert!(index < list_vec.len(), "List index out of bounds");
+            assert!(item < list_vec[index].items.len(), "Item index out of bounds");
+            list_vec[index].items[item].1 = false;
         },
         Some(("view", sub_m)) => {
             let index: usize = sub_m.value_of_t("list").expect("MISSING ARG LIST");
 
-            if index < list_vec.len(){
-                println!("----------------------------");
-                print!("[{}] ", index);
-                list_vec[index].print();
-                println!("----------------------------");
-            } else{
-                println!("Index out of bounds");
-            }
+            assert!(index < list_vec.len(), "List index out of bounds");
+            println!("----------------------------");
+            print!("[{}] ", index);
+            list_vec[index].print();
+            println!("----------------------------");
         }
         Some(("all", sub_m)) => {
             if(list_vec.len() == 0){
                 println!("No lists present")
             } else{
-                let mut index = 0;
-                for x in &list_vec {
+                for (i, x) in list_vec.iter().enumerate() {
                     println!("----------------------------");
-                    print!("[{}] ", index);
+                    print!("[{}] ", i);
                     x.print();
                     println!("----------------------------");
-                    index += 1;
                 }
             }
         },
         Some(("rmitem", sub_m)) => {
             let index: usize = sub_m.value_of_t("list").expect("MISSING ARG LIST");
-            let item = sub_m.value_of("item").expect("MISSING ARG ITEM");
+            let item: usize = sub_m.value_of_t("item").expect("MISSING ARG ITEM");
 
-            if index < list_vec.len(){
-                list_vec[index].items.remove(item).unwrap();
-            } else{
-                println!("Index out of bounds");
-            }
+            assert!(index < list_vec.len(), "List index out of bounds");
+            assert!(item < list_vec[index].items.len(), "Item index out of bounds");
+            list_vec[index].items.remove(item);
         }
         _ => {
-            println!("Nothing detected");
+            println!("No input detected");
         }
     }
     save_to_file(&list_vec);
