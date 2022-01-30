@@ -214,6 +214,7 @@ fn main() {
 
             assert!(index < list_vec.len(), "List index out of bounds");
             list_vec[index].additem(item.to_string());
+            list_vec[index].print();
         },
         Some(("complete", sub_m)) => {
             let index: usize = sub_m.value_of_t("list").expect("MISSING ARG LIST");
@@ -222,6 +223,7 @@ fn main() {
             assert!(index < list_vec.len(), "List index out of bounds");
             assert!(item < list_vec[index].items.len(), "Item index out of bounds");
             list_vec[index].items[item].1 = true;
+            list_vec[index].print();
         },
         Some(("undo", sub_m)) => {
             let index: usize = sub_m.value_of_t("list").expect("MISSING ARG LIST");
@@ -230,25 +232,22 @@ fn main() {
             assert!(index < list_vec.len(), "List index out of bounds");
             assert!(item < list_vec[index].items.len(), "Item index out of bounds");
             list_vec[index].items[item].1 = false;
+            list_vec[index].print();
         },
         Some(("view", sub_m)) => {
             let index: usize = sub_m.value_of_t("list").expect("MISSING ARG LIST");
 
             assert!(index < list_vec.len(), "List index out of bounds");
-            println!("----------------------------");
             print!("[{}] ", index);
             list_vec[index].print();
-            println!("----------------------------");
         }
         Some(("all", sub_m)) => {
             if(list_vec.len() == 0){
                 println!("No lists present")
             } else{
                 for (i, x) in list_vec.iter().enumerate() {
-                    println!("----------------------------");
                     print!("[{}] ", i);
                     x.print();
-                    println!("----------------------------");
                 }
             }
         },
@@ -259,6 +258,7 @@ fn main() {
             assert!(index < list_vec.len(), "List index out of bounds");
             assert!(item < list_vec[index].items.len(), "Item index out of bounds");
             list_vec[index].items.remove(item);
+            list_vec[index].print();
         }
         _ => {
             println!("No input detected");
