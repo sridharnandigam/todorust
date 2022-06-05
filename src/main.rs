@@ -9,9 +9,12 @@ use std::fs::File;
 use std::io::prelude::*;
 use std::io::Read;
 use std::io::ErrorKind;
+use std::path::Path;
+use std::fs::OpenOptions;
 use chrono::{DateTime, Local, NaiveDateTime, Utc};
 
 const DATE_FORMAT: &str = "%Y-%m-%d %H:%M:%S";
+const CACHE_PATH: &str = "/home/potato/Sridhar/random/cache.txt";
 
 struct TodoList{
     name: String,
@@ -74,13 +77,21 @@ fn save_to_file(input: &Vec<TodoList>) -> Result<(), std::io::Error>{
     }
 
     //std::fs::write("cache.txt", output)
-    let mut file = File::create("cache.txt")?;
+    
+    let mut file = OpenOptions::new().write(true).create(true).open(CACHE_PATH);
+
+    let mut file = match file {
+        Ok(file) => file,
+        Err(error) => panic!("Error encountered: {:?}", error),
+    };
+
+
     file.write(output.as_bytes());
     Ok(())
 }
 
 fn retrieve_from_file() -> Result<Vec<TodoList>, std::io::Error>{
-    let mut f = File::open("cache.txt");
+    let mut f = File::open(CACHE_PATH);
 
     let mut data = String::new();
     let mut return_vec: Vec<TodoList> = Vec::new();
