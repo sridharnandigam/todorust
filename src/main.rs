@@ -78,15 +78,18 @@ fn save_to_file(input: &Vec<TodoList>) -> Result<(), std::io::Error>{
 
     //std::fs::write("cache.txt", output)
     
-    let mut file = OpenOptions::new().write(true).create(true).open(CACHE_PATH);
+    let mut file = OpenOptions::new().write(true).truncate(true).create(true).open(CACHE_PATH);
 
     let mut file = match file {
         Ok(file) => file,
         Err(error) => panic!("Error encountered: {:?}", error),
     };
 
+    //println!("Output: {:?}", output);
 
-    file.write(output.as_bytes());
+
+    write!(&mut file, "{}", output);
+
     Ok(())
 }
 
