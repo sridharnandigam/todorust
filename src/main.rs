@@ -12,6 +12,7 @@ use std::io::ErrorKind;
 use std::path::Path;
 use std::fs::OpenOptions;
 use chrono::{DateTime, Local, NaiveDateTime, Utc};
+use ansi_term::{Style, Color};
 
 const DATE_FORMAT: &str = "%Y-%m-%d %H:%M:%S";
 const CACHE_PATH: &str = "/home/potato/Sridhar/random/cache.txt";
@@ -44,8 +45,16 @@ impl TodoList{
 
     fn print(&self){
         println!("{} - {}", self.name, self.date.format(&DATE_FORMAT).to_string());
+
+        let completed_style = Style::new().strikethrough().fg(Color::Green);
+        let todo_style = Style::new().fg(Color::Red);
         for (i, (key, value)) in self.items.iter().enumerate() {
-            println!("\t[{}] {} {}", i, key, value);
+            if *value{
+                println!("\t[{}] {}", i, completed_style.paint(key));
+            } else{
+                println!("\t[{}] {}", i, todo_style.paint(key));
+
+            }
         }
     }
 
